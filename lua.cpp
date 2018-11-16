@@ -61,7 +61,7 @@ Variant LuaScript::execute(String name, Array array) {
     if (numReturns) {
         Array results;
         for(int i = 0; i < numReturns; i++) {
-            Variant result = popVariant(L);
+            results.append(popVariant(L));
         }
         return results;
     } else {
@@ -121,11 +121,11 @@ Variant LuaScript::getVariant(lua_State* L, int index) {
                 Variant value = getVariant(L, -1);
                 dict[key] = value;
             }
-            lua_pop(L, 1);
             result = dict;
             break;
         }
         default:
+            Godot::print(Variant(type));
             result = 0;
     }
     return result;
