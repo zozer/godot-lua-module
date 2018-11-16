@@ -22,13 +22,16 @@ namespace godot {
         ~LuaScript();
         void printError(const std::string& variableName, const std::string& reason);
 
-        bool load(String filename);
+        bool load(String fileName, String text);
         Variant execute(String name, Array array);
         String getName();
         Variant test();
         void pushVariant(lua_State* L, Variant var);
         Variant popVariant(lua_State* L);
         Variant getVariant(lua_State* L, int index = -1);
+
+        //lua methods
+        static int testing(lua_State* L);
     private:
         std::map<String, lua_State*> functions;
     };

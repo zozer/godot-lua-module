@@ -28,19 +28,18 @@ void LuaScript::printError(const std::string& variableName, const std::string& r
     //std::cout<<"Error: can't get ["<<variableName<<"]. "<<reason<<std::endl;
 }
 
-bool LuaScript::load(String filename) {
+bool LuaScript::load(String filename, String text) {
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
     String functionName = "";
-    if (luaL_loadfile(L, filename.alloc_c_string()) || (lua_pcall(L, 0, 0 , 0))) {
-        //std::cout<<"Error: script not loaded ("<<filename<<")"<<std::endl;
+    if (luaL_loadstring(L, text.alloc_c_string()) || (lua_pcall(L, 0, 0 , 0))) {
+        Godot::print("Error: script not loaded (" + filename + ")");
         L = 0;
         return false;
     }
-    int posStart = filename.rfind('\\') + 1;
-    int posEnd = filename.find('.',0);
-    functionName = filename.substr(posStart,posEnd - posStart);
-    functions.insert(std::pair<String,lua_State*>(functionName,L));
+    lua_pushcfunction(L, testing);
+    lua_setglobal(L, "Csum");
+    functions.insert(std::pair<String,lua_State*>(filename,L));
     return true;
 }
 
@@ -82,6 +81,21 @@ void LuaScript::pushVariant(lua_State* L, Variant var) {
         case Variant::Type::INT:
             lua_pushinteger(L, var);
             break;
+        case Variant::Type::BOOL:
+            lua_pushboolean(L,var);
+            break;
+        case Variant::Type::ARRAY: {
+            Array array = var.operator godot::Array();
+            lua_newtable(L);
+            for(int i = 0; i < array.size(); i++) {
+                Variant key = i+1;
+                Variant value = array[i];
+                pushVariant(L,key);
+                pushVariant(L,value);
+                lua_settable(L,-3);
+            }
+            break;
+        }
         case Variant::Type::DICTIONARY:
             lua_newtable(L);
             for(int i = 0; i < ((Dictionary)var).size(); i++) {
@@ -113,6 +127,9 @@ Variant LuaScript::getVariant(lua_State* L, int index) {
         case LUA_TNUMBER:
             result = lua_tonumber(L,index);
             break;
+        case LUA_TBOOLEAN:
+            result = (bool)lua_toboolean(L,index);
+            break;
         case LUA_TTABLE:
         {
             Dictionary dict;
@@ -129,4 +146,12 @@ Variant LuaScript::getVariant(lua_State* L, int index) {
             result = 0;
     }
     return result;
+}
+
+//lua functions
+int LuaScript::testing(lua_State* L) {
+    int num1 = lua_tonumber(L,1);
+    int num2 = lua_tonumber(L,2);
+    lua_pushnumber(L, num1+ num2);
+    return 1;
 }
