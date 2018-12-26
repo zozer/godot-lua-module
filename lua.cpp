@@ -64,7 +64,7 @@ Variant LuaScript::execute(String name, Array array) {
         }
         return results;
     } else {
-        return NULL;
+        return Variant();
     }
 }
 
@@ -79,10 +79,10 @@ void LuaScript::pushVariant(lua_State* L, Variant var) {
             lua_pushstring(L, (var.operator godot::String().alloc_c_string()));
             break;
         case Variant::Type::INT:
-            lua_pushinteger(L, var);
+            lua_pushinteger(L, (int64_t)var);
             break;
         case Variant::Type::BOOL:
-            lua_pushboolean(L,var);
+            lua_pushboolean(L, (bool)var);
             break;
         case Variant::Type::ARRAY: {
             Array array = var.operator godot::Array();
