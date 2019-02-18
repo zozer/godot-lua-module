@@ -5,7 +5,6 @@ using namespace godot;
 void LuaScript::_register_methods() {
     register_method("execute", &LuaScript::execute);
     register_method("load",&LuaScript::load);
-    register_method("test",&LuaScript::test);
 }
 
 void LuaScript::_init() {
@@ -66,10 +65,6 @@ Variant LuaScript::execute(String name, Array array) {
     } else {
         return Variant();
     }
-}
-
-Variant LuaScript::test() {
-    return get_parent()->get("data");
 }
 
 void LuaScript::pushVariant(lua_State* L, Variant var) {
