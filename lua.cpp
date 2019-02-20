@@ -8,45 +8,67 @@ void LuaScript::_register_methods() {
 }
 
 void LuaScript::_init() {
-
+    L = luaL_newstate();
+    luaL_openlibs(L);
 }
 
 LuaScript::LuaScript() {
 }
 
 LuaScript::~LuaScript() {
-    if(functions.size() > 0) {   
-        for(const auto& pair: functions)
-        {
-            lua_close(pair.second);
-        }      
-    } 
+    lua_close(L);
 }
 
 void LuaScript::printError(const std::string& variableName, const std::string& reason) {
     //std::cout<<"Error: can't get ["<<variableName<<"]. "<<reason<<std::endl;
 }
 
-bool LuaScript::load(String filename, String text) {
-    lua_State* L = luaL_newstate();
-    luaL_openlibs(L);
-    String functionName = "";
-    if (luaL_loadstring(L, text.alloc_c_string()) || (lua_pcall(L, 0, 0 , 0))) {
-        Godot::print("Error: script not loaded (" + filename + ")");
-        L = 0;
-        return false;
+bool LuaScript::load(String fileName) {
+    File *file = File::_new();
+    file->open(fileName,File::ModeFlags::READ);
+    String text = file->get_as_text();
+    PoolStringArray lines = text.split("\n");
+    std::map<String,String> allFunctions;
+    String inFunction = "";
+    String functionBegin = "function";
+    String functionEnd = "end";
+    for (int i = 0; i < lines.size(); i++) {
+        String line = lines[i];
+        if (inFunction == "") {
+            if (line.begins_with(functionBegin)) {
+                inFunction = true;
+                int endPos = line.find("(");
+                String name = line.substr(functionBegin.length(),endPos-functionBegin.length()).strip_edges();               
+                allFunctions.insert(std::pair<String,String>(name,line+"\n"));
+                inFunction = name;
+            }
+        } else {
+            allFunctions[inFunction]+=(line+"\n");
+            if (line == functionEnd) {
+                inFunction = "";
+            }
+        }
     }
-    lua_pushcfunction(L, testing);
-    lua_setglobal(L, "Csum");
-    functions.insert(std::pair<String,lua_State*>(filename,L));
+
+    for(std::pair<String,String> function : allFunctions) {
+        Godot::print(function.first);
+        Godot::print(function.second);
+        if (luaL_loadstring(L, function.second.alloc_c_string()) || (lua_pcall(L, 0, 0 , 0))) {
+            Godot::print("Error: script not loaded (" + function.first + ")");
+            L = 0;
+            return false;
+        }    
+        lua_pushinteger(L,get_parent()->get_child(0)->get("data"));
+        lua_setglobal(L, "data");
+        lua_pushcfunction(L, testing);
+        lua_setglobal(L, "Csum");
+        //lua_setglobal(L,function.first.alloc_c_string());
+    }
+    file->close();
     return true;
 }
 
 Variant LuaScript::execute(String name, Array array) {
-    if (!functions.count(name)) {
-        return false;
-    }
-    lua_State* L = functions[name];
     lua_getglobal(L,name.alloc_c_string());
     for (int i = 0; i < array.size(); i++) {
         Variant var = array[i];
@@ -147,6 +169,6 @@ Variant LuaScript::getVariant(lua_State* L, int index) {
 int LuaScript::testing(lua_State* L) {
     int num1 = lua_tonumber(L,1);
     int num2 = lua_tonumber(L,2);
-    lua_pushnumber(L, num1+ num2);
+    lua_pushnumber(L, lua_tonumber(L,lua_getglobal(L,"data")) + num1+ num2);
     return 1;
 }

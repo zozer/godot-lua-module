@@ -3,6 +3,7 @@
 
 #include <Godot.hpp>
 #include <Node.hpp>
+#include <File.hpp>
 #include <map>
 
 extern "C" {
@@ -22,7 +23,7 @@ namespace godot {
         ~LuaScript();
         void printError(const std::string& variableName, const std::string& reason);
 
-        bool load(String fileName, String text);
+        bool load(String fileName);
         Variant execute(String name, Array array);
         String getName();
         Variant test();
@@ -33,7 +34,7 @@ namespace godot {
         //lua methods
         static int testing(lua_State* L);
     private:
-        std::map<String, lua_State*> functions;
+        lua_State* L;
     };
  
 }
