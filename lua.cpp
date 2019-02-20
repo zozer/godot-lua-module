@@ -57,9 +57,11 @@ bool LuaScript::load(String fileName) {
             Godot::print("Error: script not loaded (" + function.first + ")");
             L = 0;
             return false;
-        }    
+        }
+        /*example of pushing godot variables    
         lua_pushinteger(L,get_parent()->get_child(0)->get("data"));
         lua_setglobal(L, "data");
+        */
         lua_pushcfunction(L, testing);
         lua_setglobal(L, "Csum");
         //lua_setglobal(L,function.first.alloc_c_string());
