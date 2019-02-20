@@ -51,3 +51,28 @@ At this point move the scons file to the root directory (ie Godot-Lua-Library) a
 
 and now you are done. Attached in the repo is also a copy of a gdns and gdnlib file to import the lua module into godot. 
 When importating the module, make sure that liblua.a for linux/mac or liblua.dll for windows is in the same folder as the compiled LuaScript module
+
+
+## Using in godot
+All you need to get it set up is attach the gdns script to a node (we will call this LuaNode)
+
+lets say you have a simple lua script under res://lua_scripts/utils.lua
+```lua
+function sum(...)
+    result = 0
+    local arg = {...}
+    for i,v in ipairs(arg) do
+       result = result + v
+    end
+    return result
+end
+```
+in godot to load in and execute this function all it would be is
+```
+onready var Lua = $"LuaNode"
+
+func foo():
+    Lua.load("res://lua_scripts/utils.lua")
+    var sum = Lua.execute("sum", [1, 2, 3, 4])
+```
+sum will now equal 10
