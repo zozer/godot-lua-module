@@ -19,10 +19,6 @@ LuaScript::~LuaScript() {
     lua_close(L);
 }
 
-void LuaScript::printError(const std::string& variableName, const std::string& reason) {
-    //std::cout<<"Error: can't get ["<<variableName<<"]. "<<reason<<std::endl;
-}
-
 bool LuaScript::load(String fileName) {
     File *file = File::_new();
     file->open(fileName,File::ModeFlags::READ);
@@ -51,8 +47,6 @@ bool LuaScript::load(String fileName) {
     }
 
     for(std::pair<String,String> function : allFunctions) {
-        Godot::print(function.first);
-        Godot::print(function.second);
         if (luaL_loadstring(L, function.second.alloc_c_string()) || (lua_pcall(L, 0, 0 , 0))) {
             Godot::print("Error: script not loaded (" + function.first + ")");
             L = 0;
@@ -62,9 +56,10 @@ bool LuaScript::load(String fileName) {
         lua_pushinteger(L,get_parent()->get_child(0)->get("data"));
         lua_setglobal(L, "data");
         */
+        /*example of pushing c function
         lua_pushcfunction(L, testing);
         lua_setglobal(L, "Csum");
-        //lua_setglobal(L,function.first.alloc_c_string());
+        */
     }
     file->close();
     return true;
@@ -171,6 +166,6 @@ Variant LuaScript::getVariant(lua_State* L, int index) {
 int LuaScript::testing(lua_State* L) {
     int num1 = lua_tonumber(L,1);
     int num2 = lua_tonumber(L,2);
-    lua_pushnumber(L, lua_tonumber(L,lua_getglobal(L,"data")) + num1+ num2);
+    lua_pushnumber(L, num1+ num2);
     return 1;
 }

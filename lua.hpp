@@ -21,7 +21,6 @@ namespace godot {
         void _init();
         LuaScript();
         ~LuaScript();
-        void printError(const std::string& variableName, const std::string& reason);
 
         bool load(String fileName);
         Variant execute(String name, Array array);
