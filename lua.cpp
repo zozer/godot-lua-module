@@ -5,6 +5,8 @@ using namespace godot;
 void LuaScript::_register_methods() {
     register_method("execute", &LuaScript::execute);
     register_method("load",&LuaScript::load);
+    register_method("pushVariant",&LuaScript::pushGlobalVariant);
+    //register_method("pushObject",&LuaScript::pushGlobalObject);
 }
 
 void LuaScript::_init() {
@@ -52,14 +54,6 @@ bool LuaScript::load(String fileName) {
             L = 0;
             return false;
         }
-        /*example of pushing godot variables    
-        lua_pushinteger(L,get_parent()->get_child(0)->get("data"));
-        lua_setglobal(L, "data");
-        */
-        /*example of pushing c function
-        lua_pushcfunction(L, testing);
-        lua_setglobal(L, "Csum");
-        */
     }
     file->close();
     return true;
@@ -69,7 +63,7 @@ Variant LuaScript::execute(String name, Array array) {
     lua_getglobal(L,name.alloc_c_string());
     for (int i = 0; i < array.size(); i++) {
         Variant var = array[i];
-        pushVariant(L,var);
+        pushVariant(var);
     }
 
     lua_pcall(L,array.size(),LUA_MULTRET,0);
@@ -78,7 +72,7 @@ Variant LuaScript::execute(String name, Array array) {
     if (numReturns) {
         Array results;
         for(int i = 0; i < numReturns; i++) {
-            results.append(popVariant(L));
+            results.append(popVariant());
         }
         return results;
     } else {
@@ -86,7 +80,7 @@ Variant LuaScript::execute(String name, Array array) {
     }
 }
 
-void LuaScript::pushVariant(lua_State* L, Variant var) {
+bool LuaScript::pushVariant(Variant var) {
     switch (var.get_type())
     {
         case Variant::Type::STRING:
@@ -104,8 +98,8 @@ void LuaScript::pushVariant(lua_State* L, Variant var) {
             for(int i = 0; i < array.size(); i++) {
                 Variant key = i+1;
                 Variant value = array[i];
-                pushVariant(L,key);
-                pushVariant(L,value);
+                pushVariant(key);
+                pushVariant(value);
                 lua_settable(L,-3);
             }
             break;
@@ -115,23 +109,45 @@ void LuaScript::pushVariant(lua_State* L, Variant var) {
             for(int i = 0; i < ((Dictionary)var).size(); i++) {
                 Variant key = ((Dictionary)var).keys()[i];
                 Variant value = ((Dictionary)var)[key];
-                pushVariant(L,key);
-                pushVariant(L,value);
+                pushVariant(key);
+                pushVariant(value);
                 lua_settable(L,-3);
             }
             break;
         default:
-            break;
+            Godot::print(var);
+            return false;
     }
+    return true;
 }
 
-Variant LuaScript::popVariant(lua_State* L) {
-    Variant result = getVariant(L);
+bool LuaScript::pushGlobalVariant(Variant var, String name) {
+    if (pushVariant(var)) {
+        lua_setglobal(L,name.alloc_c_string());
+        return true;
+    }
+    return false;
+}
+
+bool LuaScript::pushObject(Object obj) {
+    return true;
+}
+
+bool LuaScript::pushGlobalObject(Object obj, String name) {
+    bool ret = pushObject(obj);
+    if (ret) {
+        lua_setglobal(L, name.alloc_c_string());
+    }
+    return ret;
+}
+
+Variant LuaScript::popVariant() {
+    Variant result = getVariant();
     lua_pop(L,1);
     return result;
 }
 
-Variant LuaScript::getVariant(lua_State* L, int index) {
+Variant LuaScript::getVariant(int index) {
     Variant result;
     int type = lua_type(L,index);
     switch (type) {
@@ -148,15 +164,15 @@ Variant LuaScript::getVariant(lua_State* L, int index) {
         {
             Dictionary dict;
             for (lua_pushnil(L); lua_next(L, index-1); lua_pop(L, 1)) {
-                Variant key = getVariant(L, -2);
-                Variant value = getVariant(L, -1);
+                Variant key = getVariant(-2);
+                Variant value = getVariant(-1);
                 dict[key] = value;
             }
             result = dict;
             break;
         }
         default:
-            Godot::print(Variant(type));
+            //Godot::print(Variant(type));
             result = 0;
     }
     return result;
@@ -166,6 +182,7 @@ Variant LuaScript::getVariant(lua_State* L, int index) {
 int LuaScript::testing(lua_State* L) {
     int num1 = lua_tonumber(L,1);
     int num2 = lua_tonumber(L,2);
+    
     lua_pushnumber(L, num1+ num2);
     return 1;
 }
