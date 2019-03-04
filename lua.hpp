@@ -24,19 +24,15 @@ namespace godot {
 
         bool load(String fileName);
         Variant execute(String name, Array array);
-        String getName();
-        Variant test();
-        static bool pushVariant(Variant var);
-        bool pushObject(Object obj);
+        bool pushVariant(Variant var);
         bool pushGlobalVariant(Variant var, String name);
-        bool pushGlobalObject(Object obj, String name);
         Variant popVariant();
-        static Variant getVariant(int index = -1);
+        Variant getVariant(int index = -1);
 
         //lua methods
-        static int testing(lua_State* L);
+        static int cSum(lua_State* L);
     private:
-        static lua_State* L;
+        lua_State* L;
 
     };
  
